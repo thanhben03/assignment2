@@ -243,6 +243,9 @@ public class WarehouseServices extends Services<Warehouse> {
             cell2.setCellValue("Total Product");
 
             Warehouse warehouse = findByUserID(Auth.user().getId());
+            if (warehouse == null) {
+                throw new SQLException("Warehouse not found !");
+            }
             ArrayList<Product> products = productServices.findAllByWarehouseId(warehouse);
 
             // create row inside sheet

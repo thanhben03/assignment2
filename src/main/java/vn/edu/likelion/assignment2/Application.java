@@ -49,12 +49,12 @@ public class Application {
                 // Manage User
                 case 1:
                     //show submenu manage user
-                    manageUserMenu();
-                    int chooseSubMenu = 0;
+                    int chooseSubMenu;
                     try {
+                        manageUserMenu();
                         chooseSubMenu = Helper.getUserInput();
                     } catch (NumberFormatException e) {
-                        System.err.println("Invalid choose, please enter again !");
+                        System.err.println(e.getMessage());
                         continue;
                     }
 
@@ -92,13 +92,13 @@ public class Application {
                     }
                     break;
                 case 2:
-                    // Manage Warehouse
-                    manageWarehouseMenu();
-                    int chooseWareHouseMenu = 0;
+                    int chooseWareHouseMenu;
                     try {
+                        // Manage Warehouse
+                        manageWarehouseMenu();
                         chooseWareHouseMenu = Helper.getUserInput();
                     } catch (NumberFormatException e) {
-                        System.err.println("Invalid choose, please enter again !");
+                        System.err.println(e.getMessage());
                         continue;
                     }
                     switch (chooseWareHouseMenu) {
@@ -162,7 +162,11 @@ public class Application {
                     break;
                 case 4:
                     // Statics
-                    warehouseServices.handleExcelFile();
+                    try {
+                        warehouseServices.handleExcelFile();
+                    } catch (SQLException e) {
+                        System.err.println(e.getMessage());
+                    }
                     break;
                 case 5:
                     auth.logout();
@@ -194,8 +198,7 @@ public class Application {
 
     private static void manageUserMenu() {
         if (!Auth.isAdmin()) {
-            System.err.println("You do not have permission to use this function!");
-            return;
+            throw new NumberFormatException("You do not have permission to use this function!");
         }
         System.out.println("========Manage User========");
         System.out.println("1. Create User");
@@ -207,7 +210,7 @@ public class Application {
 
     private static void manageWarehouseMenu() {
         if (!Auth.isAdmin()) {
-            System.err.println("You do not have permission to use this function!");
+            throw new NumberFormatException("You do not have permission to use this function!");
         }
         System.out.println("========Manage Warehouse========");
         System.out.println("1. Create Warehouse");
