@@ -38,6 +38,7 @@ public class Application {
                 continue;
             }
 
+            // call main menu
             mainMenu();
             try {
                 choose = Helper.getUserInput();
@@ -153,9 +154,9 @@ public class Application {
                         case 2, 3:
                             System.out.println("Function under construction, come back later!");
                             break;
-                        case 4:
-                            showAllProduct();
-                            break;
+//                        case 4:
+//                            showAllProduct();
+//                            break;
                         default:
                             break;
                     }
@@ -173,6 +174,9 @@ public class Application {
                     break;
                 case 6:
                     System.exit(1);
+                    break;
+                case 7:
+                    showInfoWarehouse();
                     break;
                 default:
                     break;
@@ -193,6 +197,7 @@ public class Application {
         System.out.println("4. Statistic");
         System.out.println("5. Logout");
         System.out.println("6. Exit");
+        System.out.println("7. View Info Warehouse");
         System.out.print("----------------------\nEnter your choose:");
     }
 
@@ -227,7 +232,6 @@ public class Application {
             System.out.println("3. Delete Product");
         } else {
             System.out.println("1. Create Product");
-            System.out.println("4. Info Product");
 
         }
         System.out.print("----------------------\nEnter your choose:");
@@ -293,6 +297,10 @@ public class Application {
             if (userId != -1) {
                 user = userServices.find(userId);
                 if (user != null) {
+                    Warehouse warehouseExist = warehouseServices.findByUserID(user.getId());
+                    if (warehouseExist != null) {
+                        throw new SQLException("This user has been assigned a warehouse !");
+                    }
                     warehouse.setUserId(userId);
                 }
             }
@@ -309,6 +317,8 @@ public class Application {
         } catch (SQLException e) {
             if (e.getErrorCode() == 1) {
                 System.err.println("Warehouse name is already taken!");
+            } else {
+                System.out.println(e.getMessage());
             }
         }
 
@@ -389,6 +399,10 @@ public class Application {
         int userId = Helper.getUserInput();
 
         if (userId != -1 ) {
+            Warehouse warehouseExist = warehouseServices.findByUserID(userId);
+            if (warehouseExist != null) {
+                throw new SQLException("This user has been assigned a warehouse !");
+            }
             warehouse.setUserId(userId);
         }
 
@@ -508,6 +522,54 @@ public class Application {
             System.out.println("Imported successfully !");
         } catch (IOException | SQLException e) {
             System.err.println(e.getMessage());
+        }
+    }
+
+    private static void showInfoWarehouse() {
+
+        try {
+            // show all info warehouse if admin
+            if (Auth.isAdmin()) {
+                showInfoAllWarehouse();
+                return;
+            }
+
+            // Show only warehouse of user
+            Warehouse warehouse = warehouseServices.findByUserID(Auth.user().getId());
+            System.out.println("--------Info Warehouse (" + warehouse.getWarehouseName() + ")--------");
+            ArrayList<Product> listProducts = productServices.findAllByWarehouseId(warehouse);
+            for (Product p : listProducts) {
+                System.out.println("ID" + p.getId()
+                        + "\t | \tProduct Name: " + p.getProductName()
+                        + "\t | \tProduct Quantity: " + p.getProductQuantity()
+                        + "\t | \tProduct Price: " + p.getProductPrice())
+                ;
+                System.out.println("------------------------------------------");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private static void showInfoAllWarehouse() throws SQLException {
+        ArrayList<Warehouse> listWarehouses = warehouseServices.findAll();
+        for (Warehouse w : listWarehouses) {
+            ArrayList<Product> listProducts = productServices.findAllByWarehouseId(w);
+            System.out.println("--------Info Warehouse(" + w.getWarehouseName() + ")--------");
+            if (!listProducts.isEmpty()) {
+                for (Product p : listProducts) {
+                    System.out.println("ID" + p.getId()
+                            + "\t | \tProduct Name: " + p.getProductName()
+                            + "\t | \tProduct Quantity: " + p.getProductQuantity()
+                            + "\t | \tProduct Price: " + p.getProductPrice())
+                    ;
+                    System.out.println("------------------------------------------");
+
+                }
+            } else {
+                System.err.println("There are no product in this warehouse !");
+            }
+
         }
     }
 

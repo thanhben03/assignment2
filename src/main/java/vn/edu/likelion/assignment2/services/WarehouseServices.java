@@ -187,13 +187,14 @@ public class WarehouseServices extends Services<Warehouse> {
     public void handleExcelFile() throws SQLException {
         ProductServices productServices = new ProductServices();
         XSSFWorkbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet();
+        Sheet sheet1 = workbook.createSheet("Total");
+//        Sheet sheet2 = workbook.createSheet("Total");
 
 
         // Handle export excel for admin
         if (Auth.user().getRoleId() == 1) {
             //init first row for label
-            Row row = sheet.createRow(0);
+            Row row = sheet1.createRow(0);
             // init first cell value for label
             Cell cell = row.createCell(1);
             cell.setCellValue("Warehouse Name");
@@ -211,7 +212,7 @@ public class WarehouseServices extends Services<Warehouse> {
                 int totalProductInWarehouse = listProducts.size();
 
                 // create row inside sheet
-                row = sheet.createRow(rowCount);
+                row = sheet1.createRow(rowCount);
 
                 // create cell and insert value
                 cell = row.createCell(cellCount);
@@ -222,19 +223,25 @@ public class WarehouseServices extends Services<Warehouse> {
                 cellCount = 1;
                 totalProduct += totalProductInWarehouse;
             }
-            row = sheet.createRow(rowCount);
+            row = sheet1.createRow(rowCount);
             cell = row.createCell(0);
             cell.setCellValue("Total");
             cell2 = row.createCell(1);
             cell2.setCellValue(warehouses.size());
             Cell cell3 = row.createCell(2);
             cell3.setCellValue(totalProduct);
+
+
+            // create sheet 2
+            Sheet sheet2 = workbook.createSheet("ChiTiet");
+            sheet2 = writeToSheet2(sheet2, warehouses);
+
             // tạo ra 1 file excel vật lý
             exportToExcel(workbook, "admin.xlsx");
         }
         else { // handle excel for user
             //init first row for label
-            Row row = sheet.createRow(0);
+            Row row = sheet1.createRow(0);
             // init first cell value for label
 
             Cell cell = row.createCell(0);
@@ -249,7 +256,7 @@ public class WarehouseServices extends Services<Warehouse> {
             ArrayList<Product> products = productServices.findAllByWarehouseId(warehouse);
 
             // create row inside sheet
-            row = sheet.createRow(1);
+            row = sheet1.createRow(1);
 
             // create cell and insert value
             cell = row.createCell(0);
@@ -271,5 +278,82 @@ public class WarehouseServices extends Services<Warehouse> {
         } catch (IOException io) {
             System.out.println(io.getMessage());
         }
+    }
+
+    private Sheet writeToSheet2(Sheet sheet, ArrayList<Warehouse> listWarehouses)
+    {
+        ProductServices productServices = new ProductServices();
+
+        //init first row for label
+        Row rowSheet2 = sheet.createRow(0);
+        // init first cell value for label
+        Cell cell = rowSheet2.createCell(1);
+        cell.setCellValue("Product Name");
+        Cell cell2 = rowSheet2.createCell(2);
+        cell2.setCellValue("Product Description");
+        Cell cell3 = rowSheet2.createCell(3);
+        cell3.setCellValue("Product Quantity");
+        Cell cell4 = rowSheet2.createCell(4);
+        cell4.setCellValue("Product Price");
+
+        int rowStart = 1;
+
+        try {
+            Row rowContinue = null;
+            int totalPrice = 0; // count total price all product
+            int totalQuantity = 0; // count total quantity all product
+
+            for (Warehouse w : listWarehouses) {
+                int cellStart = 1;
+                rowContinue = sheet.createRow(rowStart);
+
+                Cell cellLabel = rowContinue.createCell(0);
+                cellLabel.setCellValue(w.getWarehouseName()); // set warehouse name
+
+                // get product of warehouse
+                ArrayList<Product> listProducts = productServices.findAllByWarehouseId(w);
+
+                for (Product p : listProducts) {
+
+                    // create cell product name and set value
+                    Cell cellName = rowContinue.createCell(1);
+                    cellName.setCellValue(p.getProductName());
+
+                    // create cell product desc and set value
+                    Cell cellDesc =  rowContinue.createCell(2);
+                    cellDesc.setCellValue(p.getProductDesc());
+
+                    // create cell product quantity and set value
+                    Cell cellQuantity =  rowContinue.createCell(3);
+                    cellQuantity.setCellValue(p.getProductQuantity());
+
+                    // create cell product price and set value
+                    Cell cellPrice =  rowContinue.createCell(4);
+                    cellPrice.setCellValue(p.getProductPrice());
+                    rowStart++; // create new row when insert 1 product
+                    rowContinue = sheet.createRow(rowStart);
+
+                    totalPrice += p.getProductPrice(); // calculate price
+                    totalQuantity += p.getProductQuantity(); // calculate quantity
+                }
+                rowStart++;
+
+            }
+
+            // create row footer
+            rowContinue = sheet.createRow(rowStart);
+            Cell totalCell = rowContinue.createCell(2);
+            totalCell.setCellValue("Total");
+
+            Cell cellTotalQuantity = rowContinue.createCell(3);
+            cellTotalQuantity.setCellValue(totalQuantity);
+
+            Cell cellTotalPrice = rowContinue.createCell(4);
+            cellTotalPrice.setCellValue(totalPrice);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return sheet;
     }
 }
